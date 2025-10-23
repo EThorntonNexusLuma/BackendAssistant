@@ -13,6 +13,17 @@ const allowlist = (process.env.CORS_ORIGINS || '')
   .map(s => s.trim())
   .filter(Boolean);
 
+// Add specific frontend URLs for production environments
+const defaultOrigins = [
+  'https://zpiv36uxydrdx5ypatb0ckb9tr6a-oci3--5173--9643543b.local-credentialless.webcontainer-api.io',
+  'https://nexus-luma-ai-assist-3hps.bolt.host',
+  'http://localhost:5173',
+  'https://localhost:5173'
+];
+
+// Combine environment origins with default ones
+const finalOrigins = allowlist.length > 0 ? allowlist : defaultOrigins;
+
 app.use((req, res, next) => {
   // Always answer preflight quickly
   if (req.method === 'OPTIONS') {
@@ -25,12 +36,13 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin(origin, cb) {
-    if (!origin) return cb(null, true); // curl, server-to-server
-    if (allowlist.length === 0) return cb(null, true); // if not configured, allow all (staging)
-    if (allowlist.includes(origin)) return cb(null, true);
-    return cb(new Error(`Not allowed by CORS: ${origin}`));
-  },
+  origin: [
+    'https://zpiv36uxydrdx5ypatb0ckb9tr6a-oci3--5173--9643543b.local-credentialless.webcontainer-api.io',
+    'https://nexus-luma-ai-assist-3hps.bolt.host',
+    'http://localhost:5173',
+    'https://localhost:5173',
+    ...finalOrigins
+  ],
   credentials: true
 }));
 
@@ -47,7 +59,7 @@ console.log('ENV CHECK', {
   hasGoogleSecret: !!process.env.GOOGLE_CLIENT_SECRET,
   hasRedirect: !!process.env.GOOGLE_REDIRECT_URI,
   hasDashboardUrl: !!process.env.DASHBOARD_URL,
-  corsOrigins: allowlist
+  corsOrigins: finalOrigins
 });
 
 // ---- Routes ----
