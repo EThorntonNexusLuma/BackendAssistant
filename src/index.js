@@ -48,9 +48,21 @@ app.use(cors({
 
 // Allow scripts, styles, and resources from your app + embedded origins
 app.use((req, res, next) => {
+  const FRONTEND = process.env.DASHBOARD_URL || 'https://nexus-luma-ai-assist-3hps.bolt.host';
+  const BACKEND  = process.env.PUBLIC_API_BASE || 'https://nodejs-production-2b6d.up.railway.app';
+
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://app.nexusluma.com https://nodejs-production-2b6d.up.railway.app https://your-bolt-app.bolt.run"
+    [
+      `default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: ${FRONTEND} ${BACKEND};`,
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${FRONTEND} ${BACKEND} blob:;`,
+      `style-src 'self' 'unsafe-inline';`,
+      `img-src 'self' data: blob:;`,
+      `font-src 'self' data:;`,
+      `connect-src 'self' ${FRONTEND} ${BACKEND} wss:;`,
+      `media-src 'self' blob: data:;`,
+      `frame-src 'self' ${FRONTEND} ${BACKEND};`
+    ].join(' ')
   );
   next();
 });
