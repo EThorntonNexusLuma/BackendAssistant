@@ -46,6 +46,15 @@ app.use(cors({
   credentials: true
 }));
 
+// Allow scripts, styles, and resources from your app + embedded origins
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://app.nexusluma.com https://nodejs-production-2b6d.up.railway.app https://your-bolt-app.bolt.run"
+  );
+  next();
+});
+
 // ---- Health & ping ----
 app.get('/api/health', (_req, res) => res.status(200).send('ok'));
 app.get('/api/ping', (_req, res) => res.json({ ok: true }));
