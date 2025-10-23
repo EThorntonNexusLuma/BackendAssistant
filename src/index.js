@@ -30,6 +30,8 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
     res.header('Access-Control-Allow-Headers', 'Content-Type, X-NXL-Public-Key');
     res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    // Remove any restrictive CSP for preflight requests
+    res.header('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval' blob: data:; object-src 'none';");
     return res.sendStatus(204);
   }
   next();
@@ -51,19 +53,27 @@ app.use((req, res, next) => {
   const FRONTEND = process.env.DASHBOARD_URL || 'https://nexus-luma-ai-assist-3hps.bolt.host';
   const BACKEND  = process.env.PUBLIC_API_BASE || 'https://nodejs-production-2b6d.up.railway.app';
 
+  // More permissive CSP to handle blob scripts and dynamic content
   res.setHeader(
     'Content-Security-Policy',
     [
-      `default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: ${FRONTEND} ${BACKEND};`,
-      `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${FRONTEND} ${BACKEND} blob:;`,
-      `style-src 'self' 'unsafe-inline';`,
-      `img-src 'self' data: blob:;`,
-      `font-src 'self' data:;`,
-      `connect-src 'self' ${FRONTEND} ${BACKEND} wss:;`,
-      `media-src 'self' blob: data:;`,
-      `frame-src 'self' ${FRONTEND} ${BACKEND};`
+      `default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: ${FRONTEND} ${BACKEND} *;`,
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${FRONTEND} ${BACKEND} blob: data: *;`,
+      `script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' ${FRONTEND} ${BACKEND} blob: data: *;`,
+      `style-src 'self' 'unsafe-inline' ${FRONTEND} ${BACKEND} *;`,
+      `img-src 'self' data: blob: ${FRONTEND} ${BACKEND} *;`,
+      `font-src 'self' data: ${FRONTEND} ${BACKEND} *;`,
+      `connect-src 'self' ${FRONTEND} ${BACKEND} wss: ws: *;`,
+      `media-src 'self' blob: data: ${FRONTEND} ${BACKEND} *;`,
+      `frame-src 'self' ${FRONTEND} ${BACKEND} *;`,
+      `worker-src 'self' blob: ${FRONTEND} ${BACKEND};`,
+      `child-src 'self' blob: ${FRONTEND} ${BACKEND};`
     ].join(' ')
   );
+  
+  // Also set a permissive header for X-Frame-Options
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  
   next();
 });
 
