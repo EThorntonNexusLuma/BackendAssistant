@@ -1,6 +1,5 @@
 // src/db.js
-import pg from 'pg';
-const { Pool } = pg;
+import { Pool } from 'pg';
 
 // 1) Use the single DATABASE_URL, not PGHOST/PGPORT/PGUSER/etc.
 const connectionString = process.env.DATABASE_URL;
@@ -8,12 +7,13 @@ if (!connectionString) {
   throw new Error('Missing env: DATABASE_URL');
 }
 
-// 2) Handle SSL for different environments
-const pool = new Pool({
-  connectionString,
-  ssl: process.env.NODE_ENV === 'production' 
-    ? { rejectUnauthorized: false } 
-    : false
+// Export a pool configured for private-network/dev usage per request
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // private host from Railway
+  ssl: false,                                  // IMPORTANT: no SSL for private net
+  keepAlive: true,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Small helper so the rest of your code can use `query(...)`
